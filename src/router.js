@@ -12,6 +12,7 @@ const Settings = () => import("./pages/Settings.vue");
 import Setup from "./pages/Setup.vue";
 import StatusPage from "./pages/StatusPage.vue";
 import Entry from "./pages/Entry.vue";
+import LandingPage from "./pages/LandingPage.vue";
 import ManageStatusPage from "./pages/ManageStatusPage.vue";
 import AddStatusPage from "./pages/AddStatusPage.vue";
 import NotFound from "./pages/NotFound.vue";
@@ -36,13 +37,10 @@ import RemoteBrowsers from "./components/settings/RemoteBrowsers.vue";
 const routes = [
     {
         path: "/",
-        component: Entry,
+        component: LandingPage,
     },
     {
-        // If it is "/dashboard", the active link is not working
-        // If it is "", it overrides the "/" unexpectedly
-        // Give a random name to solve the problem.
-        path: "/empty",
+        path: "/dashboard",
         component: Layout,
         children: [
             {
