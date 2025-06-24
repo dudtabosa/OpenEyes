@@ -20,7 +20,15 @@
       </div>
       <div>
         <label for="cpf">CPF: *</label>
-        <input v-model="formData.cpf" id="cpf" placeholder="000.000.000-00" required />
+        <input
+          :value="cpfFormatted"
+          @input="onCpfInput"
+          id="cpf"
+          placeholder="000.000.000-00"
+          required
+          maxlength="14"
+          pattern="\d{3}\.\d{3}\.\d{3}-\d{2}"
+        />
       </div>
       <div>
         <label for="forma_pagamento">Forma de Pagamento: *</label>
@@ -41,10 +49,7 @@
 </template>
 
 <script>
-import { io } from "socket.io-client";
-
 export default {
-  name: "UserRegister",
   data() {
     return {
       formData: {
@@ -58,11 +63,19 @@ export default {
       msg: "",
       success: false,
       loading: false,
-      socket: null,
+      redirectTimeout: null,
     };
   },
-  mounted() {
-    this.socket = io();
+  computed: {
+    cpfFormatted() {
+      // Formata o CPF para 000.000.000-00
+      const v = this.formData.cpf.replace(/\D/g, "").slice(0, 11);
+      if (!v) return "";
+      if (v.length <= 3) return v;
+      if (v.length <= 6) return v.slice(0,3) + '.' + v.slice(3);
+      if (v.length <= 9) return v.slice(0,3) + '.' + v.slice(3,6) + '.' + v.slice(6);
+      return v.slice(0,3) + '.' + v.slice(3,6) + '.' + v.slice(6,9) + '-' + v.slice(9,11);
+    }
   },
   methods: {
     async register() {
@@ -70,78 +83,108 @@ export default {
       this.success = false;
       this.loading = true;
       
-      try {
-        // Validação básica
-        if (!this.formData.username || !this.formData.password || !this.formData.email || 
-            !this.formData.nome || !this.formData.cpf || !this.formData.forma_pagamento) {
-          this.success = false;
-          this.msg = "Todos os campos são obrigatórios.";
-          return;
-        }
+      // Validação básica
+      if (!this.formData.username || !this.formData.password || !this.formData.email || 
+          !this.formData.nome || !this.formData.cpf || !this.formData.forma_pagamento) {
+        this.success = false;
+        this.msg = "Todos os campos são obrigatórios.";
+        this.loading = false;
+        return;
+      }
 
-        // Validação de senha
-        if (this.formData.password.length < 6) {
-          this.success = false;
-          this.msg = "Senha deve ter pelo menos 6 caracteres.";
-          return;
-        }
+      // Validação de senha
+      if (this.formData.password.length < 6) {
+        this.success = false;
+        this.msg = "Senha deve ter pelo menos 6 caracteres.";
+        this.loading = false;
+        return;
+      }
 
-        // Chamada REST para cadastro
-        const res = await fetch("/api/register", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(this.formData)
-        });
-        
-        if (!res.ok) {
-          this.success = false;
-          this.msg = "Erro ao conectar com o servidor.";
-          this.loading = false;
-          return;
-        }
-        const data = await res.json();
-        if (data.ok) {
-          this.success = true;
-          this.msg = data.msg;
-          // Login automático após cadastro
-          try {
-            await this.autoLogin();
-          } catch (error) {
-            this.msg = "Cadastro realizado com sucesso! Faça login para continuar.";
-          }
-        } else {
-          this.success = false;
-          this.msg = data.msg;
-        }
-      } catch (e) {
+      // Validação de e-mail
+      if (!this.validateEmail(this.formData.email)) {
+        this.success = false;
+        this.msg = "E-mail inválido. Informe um e-mail válido.";
+        this.loading = false;
+        return;
+      }
+
+      // Validação de CPF
+      const cpf = this.formData.cpf.replace(/\D/g, "");
+      if (cpf.length !== 11 || !this.isValidCPF(cpf)) {
+        this.success = false;
+        this.msg = "CPF inválido. Informe um CPF válido.";
+        this.loading = false;
+        return;
+      }
+      this.formData.cpf = cpf;
+
+      // Chamada REST para cadastro
+      const res = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(this.formData)
+      });
+      
+      if (!res.ok) {
         this.success = false;
         this.msg = "Erro ao conectar com o servidor.";
-        console.error("Erro no cadastro:", e);
+        this.loading = false;
+        return;
       }
-      
+      const data = await res.json();
+      if (data.ok) {
+        this.success = true;
+        this.msg = data.msg;
+        // Login automático após cadastro
+        try {
+          await this.autoLogin();
+          // Redirecionar para dashboard após login automático
+          this.$router.push('/dashboard');
+        } catch (error) {
+          this.msg = "Cadastro realizado com sucesso! Faça login para continuar.";
+          // Redirecionar automaticamente após 2 segundos
+          if (this.redirectTimeout) clearTimeout(this.redirectTimeout);
+          this.redirectTimeout = setTimeout(() => {
+            this.$router.push('/dashboard');
+          }, 2000);
+        }
+      } else {
+        this.success = false;
+        this.msg = data.msg;
+      }
       this.loading = false;
     },
-    async autoLogin() {
-      return new Promise((resolve, reject) => {
-        this.socket.emit("login", {
-          username: this.formData.username,
-          password: this.formData.password,
-        }, (loginRes) => {
-          if (loginRes.ok) {
-            this.$emit('registration-success');
-            resolve();
-          } else {
-            reject(new Error(loginRes.msg));
-          }
-        });
-      });
+    validateEmail(email) {
+      // Validação simples: deve conter @ e terminar com .com
+      return /.+@.+\..+/.test(email) && email.includes('@') && email.endsWith('.com');
+    },
+    isValidCPF(cpf) {
+      // Algoritmo de validação de CPF
+      if (cpf.length !== 11 || /^([0-9])\1+$/.test(cpf)) return false;
+      let sum = 0;
+      let rest;
+      for (let i = 1; i <= 9; i++) sum += parseInt(cpf.substring(i-1, i)) * (11 - i);
+      rest = (sum * 10) % 11;
+      if ((rest === 10) || (rest === 11)) rest = 0;
+      if (rest !== parseInt(cpf.substring(9, 10))) return false;
+      sum = 0;
+      for (let i = 1; i <= 10; i++) sum += parseInt(cpf.substring(i-1, i)) * (12 - i);
+      rest = (sum * 10) % 11;
+      if ((rest === 10) || (rest === 11)) rest = 0;
+      if (rest !== parseInt(cpf.substring(10, 11))) return false;
+      return true;
+    },
+    onCpfInput(e) {
+      // Permite apenas números
+      this.formData.cpf = e.target.value.replace(/\D/g, "").slice(0, 11);
     },
   },
   beforeUnmount() {
     if (this.socket) {
       this.socket.disconnect();
     }
-  },
+    if (this.redirectTimeout) clearTimeout(this.redirectTimeout);
+  }
 };
 </script>
 
@@ -156,14 +199,12 @@ export default {
   color: #222;
   box-shadow: 0 2px 16px rgba(0,0,0,0.04);
 }
-
 .user-register label {
   display: block;
   margin-bottom: 0.2rem;
   color: #222;
   font-weight: 500;
 }
-
 .user-register input,
 .user-register select {
   width: 100%;
@@ -175,13 +216,11 @@ export default {
   background: #f9f9f9;
   font-size: 14px;
 }
-
 .user-register input:focus,
 .user-register select:focus {
   outline: 2px solid #1976d2;
   background: #fff;
 }
-
 .user-register .password-hint {
   display: block;
   font-size: 12px;
@@ -189,7 +228,6 @@ export default {
   margin-top: -0.5rem;
   margin-bottom: 1rem;
 }
-
 .user-register button {
   width: 100%;
   padding: 0.7rem;
@@ -202,16 +240,13 @@ export default {
   font-size: 16px;
   transition: background-color 0.3s ease;
 }
-
 .user-register button:hover:not(:disabled) {
   background: #1565c0;
 }
-
 .user-register button:disabled {
   background: #ccc;
   cursor: not-allowed;
 }
-
 .user-register .success {
   color: #4caf50;
   margin-top: 1rem;
@@ -220,7 +255,6 @@ export default {
   border-radius: 4px;
   text-align: center;
 }
-
 .user-register .error {
   color: #f44336;
   margin-top: 1rem;

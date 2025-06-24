@@ -1,5 +1,5 @@
 // Setup para testes unitários do frontend
-import { config } from '@vue/test-utils';
+const { config } = require('@vue/test-utils');
 
 // Configuração global para testes Vue
 config.global.mocks = {
