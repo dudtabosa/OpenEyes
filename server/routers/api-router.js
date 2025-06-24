@@ -18,6 +18,8 @@ const { makeBadge } = require("badge-maker");
 const { Prometheus } = require("../prometheus");
 const Database = require("../database");
 const { UptimeCalculator } = require("../uptime-calculator");
+const { passwordStrength } = require("check-password-strength");
+const passwordHash = require("../password-hash");
 
 let router = express.Router();
 
@@ -627,5 +629,92 @@ function determineStatus(status, previousHeartbeat, maxretries, isUpsideDown, be
         }
     }
 }
+
+/**
+ * @api {post} /api/register Cadastro de novo usuário
+ * @apiName RegisterUser
+ * @apiGroup Auth
+ * @apiVersion 1.0.0
+ *
+ * @apiParam {String} username Nome de usuário (obrigatório)
+ * @apiParam {String} password Senha (obrigatório)
+ * @apiParam {String} email Email do usuário (obrigatório)
+ * @apiParam {String} nome Nome completo (obrigatório)
+ * @apiParam {String} cpf CPF (obrigatório, único)
+ * @apiParam {String} forma_pagamento Forma de pagamento (obrigatório)
+ *
+ * @apiSuccess {Boolean} ok Status da operação
+ * @apiSuccess {String} msg Mensagem de resposta
+ *
+ * @apiError {Boolean} ok=false Status da operação
+ * @apiError {String} msg Mensagem de erro
+ */
+router.post("/api/register", async (req, res) => {
+    try {
+        const { username, password, email, nome, cpf, forma_pagamento } = req.body;
+
+        // Validações básicas
+        if (!username || !password || !email || !nome || !cpf || !forma_pagamento) {
+            return res.status(400).json({
+                ok: false,
+                msg: "Todos os campos são obrigatórios: usuário, senha, email, nome, CPF e forma de pagamento."
+            });
+        }
+
+        // Validar força da senha
+        if (password.length < 6) {
+            return res.status(400).json({
+                ok: false,
+                msg: "Senha muito fraca. Deve ter pelo menos 6 caracteres."
+            });
+        }
+        
+        const passwordCheck = passwordStrength(password);
+        if (passwordCheck.value < 2) {
+            return res.status(400).json({
+                ok: false,
+                msg: `Senha muito fraca. ${passwordCheck.feedback.warning}`
+            });
+        }
+
+        // Verificar se usuário já existe
+        const existingUser = await R.findOne("user", "username = ? OR email = ? OR cpf = ?", [username, email, cpf]);
+        if (existingUser) {
+            let msg = "Nome de usuário já existe.";
+            if (existingUser.email === email) msg = "Email já está em uso.";
+            if (existingUser.cpf === cpf) msg = "CPF já está em uso.";
+            return res.status(409).json({
+                ok: false,
+                msg: msg
+            });
+        }
+
+        // Hash da senha
+        const hashedPassword = await passwordHash.generate(password);
+
+        // Criar usuário
+        const user = R.dispense("user");
+        user.username = username;
+        user.password = hashedPassword;
+        user.email = email;
+        user.nome = nome;
+        user.cpf = cpf;
+        user.forma_pagamento = forma_pagamento;
+        user.active = true;
+        await R.store(user);
+
+        res.json({
+            ok: true,
+            msg: "Usuário cadastrado com sucesso!"
+        });
+
+    } catch (error) {
+        console.error("Erro no cadastro:", error);
+        res.status(500).json({
+            ok: false,
+            msg: error.message
+        });
+    }
+});
 
 module.exports = router;

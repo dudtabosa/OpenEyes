@@ -247,8 +247,12 @@ class SetupDatabase {
                 enableBrotli: true,
             }));
 
+            // Fix for dev environment
+            app.use("/src", express.static("src"));
+
             app.get("*", async (_request, response) => {
-                response.send(this.server.indexHTML);
+                let indexHTML = fs.readFileSync(path.join(__dirname, "../dist/index.html")).toString();
+                response.send(indexHTML);
             });
 
             app.options("*", async (_request, response) => {

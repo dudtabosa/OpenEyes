@@ -693,6 +693,46 @@ let needSetup = false;
             }
         });
 
+        socket.on("registerUser", async (data, callback) => {
+            console.log("[registerUser] Recebido:", data);
+            try {
+                if (!data || !data.username || !data.password) {
+                    console.log("[registerUser] Dados obrigatórios ausentes");
+                    throw new Error("Usuário e senha são obrigatórios.");
+                }
+
+                if (passwordStrength(data.password).value === "Too weak") {
+                    console.log("[registerUser] Senha muito fraca");
+                    throw new Error("Senha muito fraca. Deve conter letras e números e ter pelo menos 6 caracteres.");
+                }
+
+                // Verifica se já existe usuário com o mesmo nome
+                let existingUser = await R.findOne("user", " username = ? ", [data.username]);
+                if (existingUser) {
+                    console.log("[registerUser] Nome de usuário já existe");
+                    throw new Error("Nome de usuário já existe.");
+                }
+
+                let user = R.dispense("user");
+                user.username = data.username;
+                user.password = await passwordHash.generate(data.password);
+                user.active = 1;
+                await R.store(user);
+
+                console.log("[registerUser] Usuário cadastrado com sucesso:", user.username);
+                callback({
+                    ok: true,
+                    msg: "Usuário cadastrado com sucesso!",
+                });
+            } catch (e) {
+                console.log("[registerUser] Erro:", e);
+                callback({
+                    ok: false,
+                    msg: e.message,
+                });
+            }
+        });
+
         // ***************************
         // Auth Only API
         // ***************************

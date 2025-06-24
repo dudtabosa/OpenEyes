@@ -1,12 +1,10 @@
 <template>
     <div v-if="show" class="form-container">
         <form @submit.prevent="submit">
-            <div>
-                <object width="64" height="64" data="/icon.svg" />
-                <div style="font-size: 28px; font-weight: bold; margin-top: 5px;">
-                    Uptime Kuma
-                </div>
-            </div>
+            <h1 class="h3 mb-3 fw-normal">
+                <i class="fas fa-eye me-2" style="color: var(--primary);"></i>OpenEyes
+            </h1>
+            <h3>{{ $t("Setup Database") }}</h3>
 
             <div v-if="info.runningSetup" class="mt-5">
                 <div class="alert alert-success mx-3 px-4" role="alert">

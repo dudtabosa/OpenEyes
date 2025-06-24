@@ -13,6 +13,7 @@ import Setup from "./pages/Setup.vue";
 import StatusPage from "./pages/StatusPage.vue";
 import Entry from "./pages/Entry.vue";
 import LandingPage from "./pages/LandingPage.vue";
+import Register from "./pages/Register.vue";
 import ManageStatusPage from "./pages/ManageStatusPage.vue";
 import AddStatusPage from "./pages/AddStatusPage.vue";
 import NotFound from "./pages/NotFound.vue";
@@ -38,6 +39,10 @@ const routes = [
     {
         path: "/",
         component: LandingPage,
+    },
+    {
+        path: "/register",
+        component: Register,
     },
     {
         path: "/dashboard",

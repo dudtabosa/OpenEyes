@@ -28,7 +28,7 @@
             <pre>domain: notify
 service: mobile_app_my_phone # change to your device name
 service_data:
-  title: Uptime Kuma
+  title: OpenEyes
   data:
     status: 0 # 0=down 1=up
     # name: Optional Uptime Kuma Monitor Name to filter by</pre>

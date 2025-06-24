@@ -724,7 +724,7 @@
     "Channel Name": "Channel Name",
     "Notify Channel": "Notify Channel",
     "aboutNotifyChannel": "Notify channel will trigger a desktop or mobile notification for all members of the channel, whether their availability is set to active or away.",
-    "Uptime Kuma URL": "Uptime Kuma URL",
+    "Uptime Kuma URL": "OpenEyes URL",
     "setup a new monitor group": "set up a new monitor group",
     "openModalTo": "open modal to {0}",
     "Add a domain": "Add a domain",
@@ -1123,5 +1123,7 @@
     "Staged Tags for Batch Add": "Staged Tags for Batch Add",
     "Clear Form": "Clear Form",
     "pause": "Pause",
-    "Manual": "Manual"
+    "Manual": "Manual",
+    "Kuma": "Kuma",
+    "Uptime Kuma": "OpenEyes"
 }

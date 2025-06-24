@@ -12,8 +12,8 @@
         <!-- Desktop header -->
         <header v-if="! $root.isMobile" class="d-flex flex-wrap justify-content-center py-3 mb-3 border-bottom">
             <router-link to="/dashboard" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-dark text-decoration-none">
-                <object class="bi me-2 ms-4" width="40" height="40" data="/icon.svg" />
-                <span class="fs-4 title">{{ $t("Uptime Kuma") }}</span>
+                <i class="fas fa-eye bi me-2 ms-4" style="font-size: 2rem; color: var(--primary);"></i>
+                <span class="fs-4 title">OpenEyes</span>
             </router-link>
 
             <a v-if="hasNewVersion" target="_blank" href="https://github.com/louislam/uptime-kuma/releases" class="btn btn-primary me-3">
@@ -84,8 +84,8 @@
         <!-- Mobile header -->
         <header v-else class="d-flex flex-wrap justify-content-center pt-2 pb-2 mb-3">
             <router-link to="/dashboard" class="d-flex align-items-center text-dark text-decoration-none">
-                <object class="bi" width="40" height="40" data="/icon.svg" />
-                <span class="fs-4 title ms-2">Uptime Kuma</span>
+                <i class="fas fa-eye bi me-2 ms-2" style="font-size: 2rem; color: var(--primary);"></i>
+                <span class="fs-4 title ms-2">OpenEyes</span>
             </router-link>
         </header>
 

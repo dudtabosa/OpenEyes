@@ -28,7 +28,7 @@ export const isNode = typeof process !== "undefined" && process?.versions?.node;
  */
 const dayjs = (isNode) ? require("dayjs") : dayjsFrontend;
 
-export const appName = "Uptime Kuma";
+export const appName = "OpenEyes";
 export const DOWN = 0;
 export const UP = 1;
 export const PENDING = 2;
@@ -393,7 +393,11 @@ class Logger {
 
 export const log = new Logger();
 
-declare global { interface String { replaceAll(str: string, newStr: string): string; } }
+declare global {
+    interface String {
+        replaceAll(str: string | RegExp, newStr: string | ((substring: string, ...args: any[]) => string)): string;
+    }
+}
 
 /**
  * String.prototype.replaceAll() polyfill
@@ -404,7 +408,7 @@ declare global { interface String { replaceAll(str: string, newStr: string): str
  */
 export function polyfill() {
     if (!String.prototype.replaceAll) {
-        String.prototype.replaceAll = function (str: string, newStr: string) {
+        String.prototype.replaceAll = function (str: string | RegExp, newStr: any) {
             // If a regex pattern
             if (Object.prototype.toString.call(str).toLowerCase() === "[object regexp]") {
                 return this.replace(str, newStr);

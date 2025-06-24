@@ -4,9 +4,9 @@
             <form @submit.prevent="submit">
                 <div>
                     <object width="64" height="64" data="/icon.svg" />
-                    <div style="font-size: 28px; font-weight: bold; margin-top: 5px;">
-                        Uptime Kuma
-                    </div>
+                    <h1 class="h3 mb-3 fw-normal">
+                        <i class="fas fa-eye me-2" style="color: var(--primary);"></i>OpenEyes
+                    </h1>
                 </div>
 
                 <p class="mt-3">
